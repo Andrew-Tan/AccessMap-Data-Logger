@@ -17,7 +17,7 @@
         <label class="labels">Access Token:</label>
 
         <div class="input-fields">
-          <textarea title="acctoken" cols="35" rows="7" readonly><%= access_token %></textarea>
+          <textarea id="acctoken" title="" cols="35" rows="7"><%= access_token %></textarea>
         </div>
       </div>
       <div class="pure-control-group">
@@ -25,7 +25,7 @@
         <label class="labels">Refresh Token:</label>
 
         <div class="input-fields">
-          <textarea title="reftoken" cols="35" rows="7" readonly><%= refresh_token %></textarea>
+          <textarea id="reftoken" title="" cols="35" rows="7"><%= refresh_token %></textarea>
         </div>
       </div>
       <div class="pure-control-group">
@@ -75,7 +75,7 @@
         $.ajax({
           type: 'post',
           headers: {
-            "Authorization": "Bearer <%= access_token %>"
+            "Authorization": "Bearer " + $("#acctoken").val()
           },
           url: "/api/saveLog",
           data: parsedJson,
@@ -84,7 +84,26 @@
           },
           failure: function (result) {
             $("#responseJson").val(JSON.stringify(result, null, 2));
-          }
+          },
+          error: function (jqXHR, exception) {
+            let msg;
+            if (jqXHR.status === 0) {
+              msg = 'Not connect.\n Verify Network.';
+            } else if (jqXHR.status == 404) {
+              msg = 'Requested page not found. [404]';
+            } else if (jqXHR.status == 500) {
+              msg = 'Internal Server Error [500].';
+            } else if (exception === 'parsererror') {
+              msg = 'Requested JSON parse failed.';
+            } else if (exception === 'timeout') {
+              msg = 'Time out error.';
+            } else if (exception === 'abort') {
+              msg = 'Ajax request aborted.';
+            } else {
+              msg = 'Uncaught Error.\n' + jqXHR.responseText;
+            }
+            $("#responseJson").val('[ ' + msg + ' ]');
+          },
         });
       } catch (error) {
         $("#responseJson").val(error.toString());
