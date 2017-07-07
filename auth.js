@@ -6,6 +6,7 @@ const db             = require('./db');
 const LocalStrategy  = require('passport-local').Strategy;
 const passport       = require('passport');
 const request        = require('request');
+const utils          = require('./utils');
 
 /* eslint-disable camelcase */
 
@@ -28,8 +29,9 @@ const request        = require('request');
  * token passed to them through the Authorization Bearer usage.
  */
 passport.use(new LocalStrategy((username, password, done) => {
+  // TODO: check for this type of auth!!
   const basicAuth = new Buffer(`${config.client.clientID}:${config.client.clientSecret}`).toString('base64');
-  request.post('https://localhost:3000/oauth/token', {
+  request.post(config.authorization.url + config.authorization.tokenURL, {
     form : {
       username,
       password,
@@ -40,18 +42,23 @@ passport.use(new LocalStrategy((username, password, done) => {
       Authorization: `Basic ${basicAuth}`,
     },
   }, (error, response, body) => {
-    const { access_token, refresh_token, expires_in } = JSON.parse(body);
-    if (response.statusCode === 200 && access_token) {
-      // TODO: scopes
-      const expirationDate = expires_in ? new Date(Date.now() + (expires_in * 1000)) : null;
-      db.accessTokens.save(access_token, expirationDate, config.client.clientID)
-      .then(() => {
-        if (refresh_token != null) {
-          return db.refreshTokens.save(refresh_token, config.client.clientID);
-        }
-        return Promise.resolve();
+    const { accessToken, refreshToken } = JSON.parse(body);
+    if (response.statusCode === 200 && accessToken) {
+      // Get and save token info
+      utils.getTokenInfo(accessToken)
+      .then((tokenInfo) => {
+        const { clientID, userID, scope, expires_in } = tokenInfo;
+        const expirationDate = expires_in ? new Date(Date.now() + (expires_in * 1000)) : null;
+        // TODO: scope verify
+        db.accessTokens.save(accessToken, expirationDate, userID, clientID, scope)
+        .then(() => {
+          if (refreshToken != null) {
+            return db.refreshTokens.save(refreshToken, userID, clientID, scope);
+          }
+          return Promise.resolve();
+        })
+        .then(done(null, { accessToken, refreshToken, userID, clientID, scope }));
       })
-      .then(done(null, { accessToken: access_token, refreshToken: refresh_token }))
       .catch(() => done(null, false));
     }
   });
@@ -77,17 +84,15 @@ passport.use(new BearerStrategy((accessToken, done) => {
   })
   .then((token) => {
     // No database entry, verify with server
+    // TODO: check for correctness
     if (token == null) {
-      const tokeninfoURL = config.authorization.tokeninfoURL;
-      request.get(tokeninfoURL + accessToken, (error, response, body) => {
-        if (error != null || response.statusCode !== 200) {
-          throw new Error('Token request not valid');
-        }
-        const { expires_in } = JSON.parse(body);
+      return utils.getTokenInfo(accessToken)
+      .then((tokenInfo) => {
+        const { clientID, userID, scope, expires_in } = tokenInfo;
         const expirationDate = expires_in ? new Date(Date.now() + (expires_in * 1000)) : null;
-        // TODO: scopes
-        return db.accessTokens.save(accessToken, expirationDate, config.client.clientID);
-      });
+        return db.accessTokens.save(accessToken, expirationDate, userID, clientID, scope);
+      })
+      .catch((err) => { return done(err, false); });
     }
     return token;
   })

@@ -2,6 +2,7 @@
 
 const config  = require('../config');
 const db      = require('../db');
+const utils   = require('../utils');
 const request = require('request');
 
 /* eslint-disable camelcase */
@@ -65,21 +66,27 @@ exports.receivetoken = (req, res) => {
       grant_type    : 'authorization_code',
     },
   }, (error, response, body) => {
-    const { access_token, refresh_token, expires_in } = JSON.parse(body);
+    const { access_token, refresh_token} = JSON.parse(body);
     if (response.statusCode === 200 && access_token != null) {
       req.session.accessToken  = access_token;  // eslint-disable-line no-param-reassign
       req.session.refreshToken = refresh_token; // eslint-disable-line no-param-reassign
       req.session.isAuthorized = true;          // eslint-disable-line no-param-reassign
 
-      const expirationDate = expires_in ? new Date(Date.now() + (expires_in * 1000)) : null;
-      db.accessTokens.save(access_token, expirationDate, config.client.clientID)
-      .then(() => {
-        if (refresh_token != null) {
-          return db.refreshTokens.save(refresh_token, config.client.clientID);
-        }
-        return Promise.resolve();
+      // Get and save token info
+      utils.getTokenInfo(access_token)
+      .then((tokenInfo) => {
+        const { clientID, userID, scope, expires_in } = tokenInfo;
+        const expirationDate = expires_in ? new Date(Date.now() + (expires_in * 1000)) : null;
+        // TODO: scope verify
+        db.accessTokens.save(access_token, expirationDate, userID, clientID, scope)
+        .then(() => {
+          if (refresh_token != null) {
+            return db.refreshTokens.save(refresh_token, userID, clientID, scope);
+          }
+          return Promise.resolve();
+        })
+        .then(res.redirect(req.session.redirectURL));
       })
-      .then(res.redirect(req.session.redirectURL))
       .catch(() => res.send(500));
     } else {
       // Error, someone is trying to put a bad authorization code in

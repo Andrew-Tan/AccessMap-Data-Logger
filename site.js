@@ -137,24 +137,31 @@ exports.save_log = [
   passport.authenticate('bearer', { session: false }),
   (req, res) => {
     const body = req.body;
-    if (body.user_id == null || body.auth_provider == null || body.data == null) {
+    if (body.data == null) {
       return res.json({
         success: false,
         reason: 'Malformed post body',
       });
     }
-    db.logData.save(req.body.user_id, req.body.auth_provider, req.body.data)
-    .then((result) => {
-      if (result === undefined) {
+    db.accessTokens.find(req.user)
+    .then((tokenInfo) => {
+      db.logData.save(tokenInfo.userID, 'AccessMap', req.body.data)
+      .then((result) => {
+        if (result === undefined) {
+          return res.json({
+            success: false,
+            reason: 'Error saving data',
+          });
+        }
         return res.json({
-          success: false,
-          reason: 'Error saving data',
+          success: true,
+          logged_content: result,
         });
-      }
-      return res.json({
-        success: true,
-        logged_content: result,
       });
+    })
+    .catch(() => {
+      res.status(500);
+      res.json({ success: false, reason: 'Internal Server Error' });
     });
   },
 ];
