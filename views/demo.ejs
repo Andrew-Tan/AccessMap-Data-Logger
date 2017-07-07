@@ -1,38 +1,96 @@
-<!DOCTYPE html>
+<% include header.ejs %>
+
 <script type="text/javascript">
   document.write("\<script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js' type='text/javascript'>\<\/script>");
 </script>
-<p>
-  Your access token (Authorization Bearer) is:
-<pre><%= access_token %></pre>
-Your refresh token is:
-<pre><%= refresh_token %></pre>
-</p>
-<p>
-<div id="div1"><h2>Get User Information from access token</h2></div>
-<button id="button_1">Get Protected EndPoint Data</button>
-</p>
-<p>
-<div id="responseLabel">Response:</div>
-<div id="protectedEndPointData">[No Protected EndPoint Data yet]</div>
-</p>
+
+<form class="pure-form pure-form-stacked">
+  <fieldset>
+    <!-- Upper box with Title, username, and password -->
+    <div class="upper-box">
+      <!-- Title -->
+      <div>
+        <h1 class="title-padding">Log Test</h1>
+      </div>
+      <div class="pure-control-group">
+        <!-- Username label and input -->
+        <label class="labels">Access Token:</label>
+
+        <div class="input-fields">
+          <textarea title="acctoken" cols="35" rows="7" readonly><%= access_token %></textarea>
+        </div>
+      </div>
+      <div class="pure-control-group">
+        <!-- Password label and input -->
+        <label class="labels">Refresh Token:</label>
+
+        <div class="input-fields">
+          <textarea title="reftoken" cols="35" rows="7" readonly><%= refresh_token %></textarea>
+        </div>
+      </div>
+      <div class="pure-control-group">
+        <label class="labels">Log Data:</label>
+
+        <div class="input-fields">
+          <textarea title="send" id="logJson" cols="35" rows="7"></textarea>
+        </div>
+      </div>
+    </div>
+    <!-- Bottom box with Sign in -->
+    <div class="bottom-box">
+      <div class="pure-controls sign-in-button">
+        <button id="logBtn" type="button" class="pure-button pure-button-primary">Post Log</button>
+      </div>
+    </div>
+    <div class="bottom-box">
+      <div class="input-fields">
+        <textarea title="response" id="responseJson" cols="35" rows="7" >[No response received yet]</textarea>
+      </div>
+    </div>
+  </fieldset>
+  <div class="from-text">
+    <a href="https://github.com/FrankHassanabad/Oauth2orizeRecipes">
+      From OAuth2OrizeRecipes
+    </a>
+  </div>
+</form>
+
+<script>
+  const randNum1 = Math.floor(Math.random() * 10000);
+  const randNum2 = Math.floor(Math.random() * 10000);
+  const randNum3 = Math.floor(Math.random() * 10000);
+  const json = {
+    data: [ randNum1, randNum2, randNum3 ]
+  };
+
+  $("#logJson").val(JSON.stringify(json, null, 2));
+</script>
+
 <script>
   $(document).ready(function () {
-    $("#button_1").click(function () {
-      $.ajax({
-        type: 'post',
-        headers: {
-          "Authorization": "Bearer <%= access_token %>"
-        },
-        url: "/api/saveLog",
-        data: { user_id: 2, auth_provider: 'AccessMap', data: { data: 'test_sample' } },
-        success: function (result) {
-          $("#protectedEndPointData").html(JSON.stringify(result));
-        },
-        failure: function (result) {
-          $("#protectedEndPointData").html(JSON.stringify(result));
-        }
-      });
+    $("#logBtn").click(function () {
+      try {
+        const parsedJson = JSON.parse($("#logJson").val());
+
+        $.ajax({
+          type: 'post',
+          headers: {
+            "Authorization": "Bearer <%= access_token %>"
+          },
+          url: "/api/saveLog",
+          data: parsedJson,
+          success: function (result) {
+            $("#responseJson").val(JSON.stringify(result, null, 2));
+          },
+          failure: function (result) {
+            $("#responseJson").val(JSON.stringify(result, null, 2));
+          }
+        });
+      } catch (error) {
+        $("#responseJson").val(error.toString());
+      }
     });
   });
 </script>
+
+<<% include footer.ejs %>
