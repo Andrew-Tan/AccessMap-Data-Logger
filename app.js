@@ -55,10 +55,8 @@ app.get('/',                      site.index);
 app.get('/login',                 site.loginForm);
 app.post('/login',                site.login);
 app.get('/info',                  site.info);
-app.get('/infosso',               site.infosso);
-app.get('/saveDemo',              site.saveDemo);
-app.get('/api/protectedEndPoint', site.protectedEndPoint);
-app.post('/api/saveLog',          site.save_log);
+app.get('/logDemo',               site.logDemo);
+app.post('/api/saveLog',          site.saveLog);
 app.get('/receivetoken',          sso.receivetoken);
 
 // static resources for stylesheets, images, javascript files
@@ -71,21 +69,28 @@ setInterval(() => {
   .catch(err => console.error('Error trying to remove expired tokens:', err.stack));
 }, config.db.timeToCheckExpiredTokens * 1000);
 
-// TODO: Change these for your own certificates.  This was generated
-// through the commands:
-// openssl genrsa -out privatekey.pem 2048
-// openssl req -new -key privatekey.pem -out certrequest.csr
-// openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.pem
-const options = {
-  key  : fs.readFileSync(path.join(__dirname, 'certs/privatekey.pem')),
-  cert : fs.readFileSync(path.join(__dirname, 'certs/certificate.pem')),
-};
+if (config.useHTTPSScheme) {
+  console.log('Using HTTPS');
+  // TODO: Change these for your own certificates.  This was generated
+  // through the commands:
+  // openssl genrsa -out privatekey.pem 2048
+  // openssl req -new -key privatekey.pem -out certrequest.csr
+  // openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.pem
+  const options = {
+    key  : fs.readFileSync(path.join(__dirname, 'certs/privatekey.pem')),
+    cert : fs.readFileSync(path.join(__dirname, 'certs/certificate.pem')),
+  };
 
-// This setting is so that our certificates will work although they are all self signed
-// TODO: Remove this if you are NOT using self signed certs
-https.globalAgent.options.rejectUnauthorized = false;
+  // This setting is so that our certificates will work although they are all self signed
+  // TODO: Remove this if you are NOT using self signed certs
+  https.globalAgent.options.rejectUnauthorized = false;
 
-// Create our HTTPS server listening on port 4000.
-https.createServer(options, app).listen(4000);
+  // Create our HTTPS server listening on port 4000.
+  https.createServer(options, app).listen(4000);
+} else {
+  console.log('Using HTTP');
+  app.listen(4000);
+}
+
 console.log('Resource Server started on port 4000');
 

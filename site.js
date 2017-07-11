@@ -12,7 +12,8 @@ const db = require('./db');
  * @returns {undefined}
  */
 exports.index = (req, res) => {
-  res.send('OAuth 2.0 Resource Server');
+  res.render('layout', { body: '<h1>OAuth 2.0 Resource Server</h1> ' +
+  '<p> <a href="/logDemo">Try a demo</a>' });
 };
 
 /**
@@ -88,40 +89,7 @@ exports.info = [
  * @param   {Object}   res - The response, which the infoss is rendered
  * @returns {undefined}
  */
-exports.infosso = [
-  sso.ensureSingleSignOn(),
-  (req, res) => {
-    const accessToken  = req.session.accessToken;
-    const refreshToken = req.session.refreshToken;
-    res.render('info', {
-      access_token  : accessToken,
-      refresh_token : refreshToken,
-    });
-  },
-];
-
-/**
- * https://localhost:4000/api/protectedEndPoint
- *
- * An example protected endPoint
- *
- * This endpoint is protected to where you have to send the Authorization Bearer
- * token to it and that token has to be valid on the authorization server.  If the
- * user is authenticated the it will send a plain text message back.
- * @param   {Object}   req - The request, which nothing is done with
- * @param   {Object}   res - The response, which the protectedEndPoint is rendered
- * @returns {undefined}
- */
-exports.protectedEndPoint = [
-  passport.authenticate('bearer', { session: false }),
-  (req, res) => {
-    // You can send whatever you want, such as JSON, etc...
-    // For a illustrative example, I'm just sending a string back
-    res.send(req.user);
-  },
-];
-
-exports.saveDemo = [
+exports.logDemo = [
   sso.ensureSingleSignOn(),
   (req, res) => {
     const accessToken  = req.session.accessToken;
@@ -133,7 +101,7 @@ exports.saveDemo = [
   },
 ];
 
-exports.save_log = [
+exports.saveLog = [
   passport.authenticate('bearer', { session: false }),
   (req, res) => {
     const body = req.body;

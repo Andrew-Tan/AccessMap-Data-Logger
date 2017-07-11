@@ -12,6 +12,14 @@
 exports.deployMode = 'test';
 
 /**
+ * Change this value to enable/disable HTTPS scheme
+ *
+ * The HTTPS server is using self-signed certificate, refer to README in cert
+ * for more detail
+ */
+exports.useHTTPSScheme = true;
+
+/**
  * The client id and the client secret.  I'm using a
  * "trusted" client so that I don't get the "decision"
  * screen.
@@ -27,12 +35,12 @@ exports.client = {
  * The Authorization server's location, port number, and the token info end point
  */
 exports.authorization = {
-  host         : 'localhost',
-  port         : '3000',
-  url          : 'https://localhost:3000/',
+  host         : 'oauth.accessmap.io',
+  port         : null,
+  url          : 'https://oauth.accessmap.io/',
   tokenURL     : 'oauth/token',
-  authorizeURL : 'https://localhost:3000/dialog/authorize',
-  tokeninfoURL : 'https://localhost:3000/api/tokeninfo?access_token=',
+  authorizeURL : 'https://oauth.accessmap.io/dialog/authorize',
+  tokeninfoURL : 'https://oauth.accessmap.io/api/tokeninfo?access_token=',
   redirectURL  : 'https://localhost:4000/receivetoken',
 };
 
