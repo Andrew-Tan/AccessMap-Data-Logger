@@ -4,6 +4,7 @@ const bodyParser     = require('body-parser');
 const cookieParser   = require('cookie-parser');
 const config         = require('./config');
 const db             = require('./db');
+const model          = require('./db/models').sequelize;
 const express        = require('express');
 const expressSession = require('express-session');
 const fs             = require('fs');
@@ -18,11 +19,17 @@ const app = express();
 app.set('view engine', 'ejs');
 app.use(cookieParser());
 
+// initalize sequelize with session store
+const SequelizeStore = require('connect-session-sequelize')(expressSession.Store);
+
 // Session Configuration
 app.use(expressSession({
   saveUninitialized : true,
   resave            : true,
   secret            : config.session.secret,
+  store: new SequelizeStore({
+    db: model,
+  }),
 }));
 
 app.use(bodyParser.urlencoded({ extended: true }));
