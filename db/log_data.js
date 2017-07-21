@@ -11,22 +11,19 @@
 const models = require('./models');
 
 /**
- * Returns an access token if it finds one, otherwise returns null if one is not found.
- * @param   {String}  token - The token to decode to get the id of the access token to find.
- * @returns {Promise} resolved with the token if found, otherwise resolved with undefined
+ * Find all logged data for a user
+ * @param   {String}  userID - the user id
+ * @returns {Promise} resolved with an array of all the logged data
  */
-exports.findAll = async (user_id, auth_provider) => {
-  // TODO: Better promise mechanism
+exports.findAll = async (userID) => {
   try {
     const result = await models.log_data.findAll({
       where: {
-        user_id: user_id,
-        auth_provider: auth_provider
+        userID,
       }
     });
 
-    // TODO: check what will return on empty
-    if (result === null) {
+    if (result.length === 0) {
       return Promise.resolve(undefined);
     }
     return Promise.resolve(result);
@@ -36,36 +33,29 @@ exports.findAll = async (user_id, auth_provider) => {
 };
 
 /**
- * Saves a access token, expiration date, user id, client id, and scope. Note: The actual full
- * access token is never saved.  Instead just the ID of the token is saved.  In case of a database
- * breach this prevents anyone from stealing the live tokens.
- * @param   {Object}  token          - The access token (required)
- * @param   {Date}    expirationDate - The expiration of the access token (required)
+ * Saves a log to the database
  * @param   {String}  userID         - The user ID (required)
- * @param   {String}  clientID       - The client ID (required)
- * @param   {String}  scope          - The scope (optional)
- * @returns {Promise} resolved with the saved token
+ * @param   {String}  data           - The data to log (required)
+ * @returns {Promise} resolved with the logged data
  */
-exports.save = async (user_id, auth_provider, data) => {
+exports.save = async (userID, data) => {
   try {
     await models.log_data.create({
-      user_id: user_id,
-      auth_provider: auth_provider,
-      logged_content: data
+      userID,
+      data,
     });
   } catch (error) {
     return Promise.resolve(undefined);
   }
 
   return Promise.resolve({
-    user_id: user_id,
-    auth_provider: auth_provider,
-    logged_content: data
+    userID,
+    data,
   });
 };
 
 /**
- * Deletes/Revokes an access token by getting the ID and removing it from the storage.
+ * Delete
  * @param   {String}  token - The token to decode to get the id of the access token to delete.
  * @returns {Promise} resolved with the deleted token or undefined if nothing is deleted
  */
@@ -74,7 +64,7 @@ exports.delete = async (token) => {
 };
 
 /**
- * Removes all access tokens.
+ * Removes all
  * @returns {Promise} resolved with all removed tokens returned
  */
 exports.removeAll = () => {

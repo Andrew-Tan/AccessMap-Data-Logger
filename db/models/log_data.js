@@ -1,13 +1,12 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define('log_data', {
-    user_id: {
-      type: DataTypes.INTEGER,
-    },
-    auth_provider: {
+    userID: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
-    logged_content: {
+    data: {
       type: DataTypes.JSONB,
+      allowNull: false,
     },
   }, {
     freezeTableName: true, // Model tableName will be the same as the model name
